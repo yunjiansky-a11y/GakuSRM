@@ -1,5 +1,5 @@
 ﻿param(
-    [string]$Output = 'dist\GakuSMM.dll',
+    [string]$Output = 'dist\GakuSRM.dll',
     [string]$Gxx = 'g++.exe'
 )
 
@@ -10,17 +10,18 @@ $outDir = Split-Path -Parent $outPath
 if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir | Out-Null }
 
 $sources = @(
-    (Join-Path $root 'src\GakuSMM.cpp'),
+    (Join-Path $root 'src\GakuSRM.cpp'),
     (Join-Path $root 'deps\imgui\imgui.cpp'),
     (Join-Path $root 'deps\imgui\imgui_draw.cpp'),
     (Join-Path $root 'deps\imgui\imgui_widgets.cpp'),
     (Join-Path $root 'deps\imgui\imgui_tables.cpp')
 )
 
-$tempOutput = Join-Path $env:TEMP 'GakuSMM_build.dll'
+$tempOutput = Join-Path $env:TEMP 'GakuSRM_build.dll'
 $arguments = @(
     '-std=c++20', '-O2', '-shared', '-static', '-fpermissive',
     '-I' + (Join-Path $root 'include'),
+    '-I' + (Join-Path $root 'src'),
     '-I' + (Join-Path $root 'deps\imgui'),
     '-o', $tempOutput
 ) + $sources + @(

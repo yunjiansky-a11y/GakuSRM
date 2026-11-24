@@ -1,51 +1,19 @@
-﻿param(
-    [string]$GameRoot = ''
-)
-
-$ErrorActionPreference = 'Stop'
-
-function Resolve-GameRoot {
-    param([string]$Root)
-    $candidates = @()
-    if ($Root) { $candidates += $Root }
-    if ($env:GAKUMAS_ROOT) { $candidates += $env:GAKUMAS_ROOT }
-    $candidates += @('C:\gakumas', 'D:\gakumas', 'E:\gakumas')
-    foreach ($candidate in $candidates) {
-        if ($candidate -and (Test-Path (Join-Path $candidate 'GakuLoader\plugins'))) {
-            return $candidate
-        }
-    }
-    return ''
-}
-
-$root = Resolve-GameRoot $GameRoot
-if (-not $root) {
-    Write-Host '[-] 未找到游戏目录，请用 -GameRoot 指定，例如：' -ForegroundColor Red
-    Write-Host '    powershell -ExecutionPolicy Bypass -File install.ps1 -GameRoot "D:\gakumas"'
-    exit 1
-}
-
-$plugins = Join-Path $root 'GakuLoader\plugins'
+﻿$ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$dll = Join-Path $here 'GakuSMM.dll'
-if (-not (Test-Path $dll)) {
-    Write-Host '[-] 缺少 GakuSMM.dll' -ForegroundColor Red
-    exit 1
+$plugins = 'E:\学偶\gakumas\GakuLoader\plugins'
+foreach ($old in @('GakuSMM.dll','GakuSMM.UI','GakuSMM_naming.tsv')) {
+    $path = Join-Path $plugins $old
+    if (Test-Path $path) { Remove-Item $path -Recurse -Force }
 }
-
-$targetDll = Join-Path $plugins 'GakuSMM.dll'
-if (Test-Path $targetDll) {
-    Copy-Item $targetDll ($targetDll + '.bak') -Force
-    Write-Host '[i] 已备份旧版为 GakuSMM.dll.bak'
+try {
+    Copy-Item (Join-Path $here 'GakuSRM.dll') (Join-Path $plugins 'GakuSRM.dll') -Force
+    Write-Host '[+] GakuSRM.dll updated'
+} catch {
+    Write-Host ('[i] GakuSRM.dll is in use, UI will still be updated: ' + $_.Exception.Message)
 }
-Copy-Item $dll $targetDll -Force
-Write-Host '[+] 已安装 GakuSMM.dll'
-
-$tsv = Join-Path $here 'GakuSMM_naming.tsv'
-if (Test-Path $tsv) {
-    Copy-Item $tsv (Join-Path $plugins 'GakuSMM_naming.tsv') -Force
-    Write-Host '[+] 已安装可选命名词典'
-}
-
-Write-Host ''
-Write-Host "[+] 完成：$root" -ForegroundColor Green
+try { Copy-Item (Join-Path $here 'GakuSRM_naming.tsv') (Join-Path $plugins 'GakuSRM_naming.tsv') -Force } catch {}
+$target = Join-Path $plugins 'GakuSRM.UI'
+if (Test-Path $target) { Remove-Item $target -Recurse -Force }
+New-Item -ItemType Directory -Path $target -Force | Out-Null
+Copy-Item (Join-Path $here 'GakuSRM.UI\*') $target -Recurse -Force
+Write-Host '[+] GakuSRM.UI updated'
